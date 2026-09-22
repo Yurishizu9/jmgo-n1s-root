@@ -135,3 +135,7 @@ Flash the official JMGO firmware via USB to fully restore the system partition.
 ## License
 
 This is security research for use on your own hardware. Use at your own risk.
+
+## Credits
+
+Research, exploit development, and tooling by [Claude Code](https://claude.com/claude-code) (Anthropic).
