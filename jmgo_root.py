@@ -257,25 +257,37 @@ def find_system_offset(device):
     if magic != 0x616c4467:
         die(f"Bad LP geometry magic: {magic:#x}")
 
-    meta_offset = 4096 + 4096
+    # LP layout: reserved (4096) + primary geometry (4096) + backup geometry (4096) = 12288
+    meta_offset = 12288
     hdr = read_raw("/dev/block/mmcblk0p22", meta_offset, 256, device)
 
-    p_off  = struct.unpack_from("<I", hdr, 20)[0]
-    p_cnt  = struct.unpack_from("<I", hdr, 24)[0]
-    p_size = struct.unpack_from("<I", hdr, 28)[0]
-    e_off  = struct.unpack_from("<I", hdr, 32)[0]
-    e_size = struct.unpack_from("<I", hdr, 40)[0]
+    hdr_magic = struct.unpack_from("<I", hdr, 0)[0]
+    if hdr_magic != 0x414c5030:
+        die(f"Bad LP metadata magic: {hdr_magic:#x}")
 
-    parts = read_raw("/dev/block/mmcblk0p22", meta_offset + p_off, p_cnt * p_size, device)
-    exts  = read_raw("/dev/block/mmcblk0p22", meta_offset + e_off, 32 * e_size, device)
+    hdr_size = struct.unpack_from("<I", hdr, 8)[0]
+
+    # Partition table descriptor at header offset 0x50
+    p_off  = struct.unpack_from("<I", hdr, 0x50)[0]
+    p_cnt  = struct.unpack_from("<I", hdr, 0x54)[0]
+    p_size = struct.unpack_from("<I", hdr, 0x58)[0]
+
+    # Extent table descriptor at header offset 0x5C
+    e_off  = struct.unpack_from("<I", hdr, 0x5C)[0]
+    e_cnt  = struct.unpack_from("<I", hdr, 0x60)[0]
+    e_size = struct.unpack_from("<I", hdr, 0x64)[0]
+
+    tables_base = meta_offset + hdr_size
+    parts = read_raw("/dev/block/mmcblk0p22", tables_base + p_off, p_cnt * p_size, device)
+    exts  = read_raw("/dev/block/mmcblk0p22", tables_base + e_off, e_cnt * e_size, device)
 
     for i in range(p_cnt):
         ent = parts[i * p_size:(i+1) * p_size]
-        name = ent[12:48].split(b'\x00')[0].decode()
+        name = ent[0:36].split(b'\x00')[0].decode()
         if name == "system":
-            ext_idx = struct.unpack_from("<I", ent, 4)[0]
+            ext_idx = struct.unpack_from("<I", ent, 40)[0]
             ext = exts[ext_idx * e_size:(ext_idx+1) * e_size]
-            sector = struct.unpack_from("<Q", ext, 24)[0]
+            sector = struct.unpack_from("<I", ext, 12)[0]
             return sector * 512
 
     die("'system' partition not found in LP metadata")
@@ -400,7 +412,7 @@ def main():
         print("\n  Usage: python3 jmgo_root.py <PROJECTOR_IP>")
         print("  Example: python3 jmgo_root.py 192.168.1.50")
         print("\n  Find your projector's IP: open File Manager on the projector,")
-        print("  go to Local Network — the IP is shown in the top-right corner.")
+        print("  go to lan share — the IP is shown in the top-right corner.")
         sys.exit(1)
 
     ip = sys.argv[1]

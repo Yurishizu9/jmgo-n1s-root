@@ -46,10 +46,16 @@ sudo apt install adb   # Debian/Ubuntu
 > **ADB is already on.** The JMGO N1S has ADB enabled by default — you do NOT need to turn on Developer Options or USB Debugging. There is nothing to enable.
 
 1. Make sure the projector is on the **same Wi-Fi** as your computer
-2. On the projector, open the **File Manager** app
-3. Go to the **Local Network** section
-4. The IP address is shown in the **top-right corner** (looks like `192.168.0.14`)
-5. Write it down
+2. On the projector, open the built-in **File Manager** (not Amaze — the one that comes with the projector)
+
+![File Manager showing device and lan share folders](images/step2a-file-manager.png)
+
+3. Click the **lan share** folder
+4. Your IP address is shown in the **top-right corner** (e.g. `local ip192.168.0.14`)
+
+![IP address shown in top-right corner of lan share](images/step2b-ip-address.png)
+
+5. Write down the numbers after "local ip" — that's your projector's IP address
 
 ### 3. Connect
 
@@ -122,7 +128,7 @@ Flash the official JMGO firmware via USB to fully restore the system partition.
 
 ## Troubleshooting
 
-**"Can't connect"** — Make sure the projector is on the same Wi-Fi as your computer. Double-check the IP. Try `adb disconnect` then `adb connect YOUR_IP:5555` again.
+**"Can't connect"** — Make sure the projector is on the same Wi-Fi as your computer. Double-check the IP address (open File Manager → lan share on the projector to see it). Try `adb disconnect` then `adb connect YOUR_IP:5555` again.
 
 **"adb: command not found"** — ADB isn't installed or isn't in your PATH. Go back to step 1.
 
