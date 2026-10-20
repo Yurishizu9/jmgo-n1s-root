@@ -191,11 +191,12 @@ def install_apk(device):
         tmp_path = f.name
 
     try:
-        result = adb("install", tmp_path, device=device).decode()
-        if "Success" in result:
+        r = run(["adb", "-s", device, "install", "--no-streaming", tmp_path])
+        result = (r.stdout + r.stderr).decode("utf-8", errors="replace")
+        if r.returncode == 0 and "Success" in result:
             ok("ExecCmd installed")
         else:
-            die(f"APK install failed: {result}")
+            die(f"APK install failed (exit {r.returncode}): {result}")
     finally:
         os.unlink(tmp_path)
 
