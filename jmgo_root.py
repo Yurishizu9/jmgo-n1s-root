@@ -144,7 +144,8 @@ def sh(command, device=None):
     return adb("shell", command, device=device).decode("utf-8", errors="replace").strip()
 
 def sh_bytes(command, device=None):
-    return adb("shell", command, device=device)
+    # Keep raw block data out of the interactive shell transport.
+    return adb("exec-out", command, device=device)
 
 def die(msg):
     print(f"\n  ERROR: {msg}")
@@ -214,8 +215,12 @@ def chmod_device(path, device):
 
 def read_raw(dev, offset, count, device):
     """Read bytes from a block device on the projector."""
+    if offset < 0 or not 0 < count <= 1024 * 1024:
+        die(f"Invalid raw read: offset={offset}, count={count}")
     data = sh_bytes(f"dd if={dev} bs=1 skip={offset} count={count} 2>/dev/null", device=device)
-    return data[:count]
+    if len(data) != count:
+        die(f"Raw read size mismatch: expected {count}, got {len(data)}")
+    return data
 
 
 def find_block(device, filepath, sb):
